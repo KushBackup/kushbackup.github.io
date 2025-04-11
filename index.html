@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Gyro Parallax</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    #scene {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #scene img {
+      width: 120%;
+      height: auto;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="scene">
+    <img data-depth="0.2" src="https://static.wixstatic.com/media/37fbc7_6ff02b23299f472e91eb507a9555657a~mv2.png">
+    <img data-depth="0.4" src="https://static.wixstatic.com/media/37fbc7_68abdf4bd33743609e135570141ca7f8~mv2.png">
+    <img data-depth="0.6" src="https://static.wixstatic.com/media/37fbc7_6d8554b2ffc941fa88863efcf15bc325~mv2.png
+">
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/parallax/3.1.0/parallax.min.js"></script>
+  <script>
+    const scene = document.getElementById('scene');
+    const parallaxInstance = new Parallax(scene, {
+      relativeInput: true,
+      hoverOnly: false,
+      inputType: 'deviceorientation', // Enable gyro
+      scalarX: 10,
+      scalarY: 10
+    });
+  </script>
+</body>
+</html>
