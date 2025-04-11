@@ -21,7 +21,7 @@
     }
 
     #scene img {
-      width: 120%;
+      width: 100%;
       height: auto;
       position: absolute;
       top: 0;
@@ -44,7 +44,7 @@
     const parallaxInstance = new Parallax(scene, {
       relativeInput: true,
       hoverOnly: false,
-      inputType: 'deviceorientation', // Enable gyro
+      inputType: 'touch', // Enable gyro
       scalarX: 10,
       scalarY: 10
     });
