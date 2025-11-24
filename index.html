@@ -1,53 +1,1066 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>3D Gyro Parallax</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
-      background: transparent;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shristhi's Goa Panic - Sketch Edition</title>
+    <style>
+        /* HANDWRITTEN FONTS */
+        @import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Patrick+Hand&display=swap');
 
-    #scene {
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-    }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #ffffff;
+            font-family: 'Patrick Hand', cursive;
+            color: #000;
+            user-select: none;
+            touch-action: none; /* Prevent scroll on mobile */
+        }
 
-    #scene img {
-      width: 100%;
-      height: auto;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-  </style>
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        /* PROCEDURAL BACKGROUND ART LAYER */
+        #sketch-background {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.15; /* Subtle sketchbook look */
+        }
+
+        /* --- SKETCH UI THEME --- */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 20;
+            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        .hud-top {
+            display: flex; justify-content: space-between; padding: 15px;
+            pointer-events: auto;
+        }
+
+        .hud-bottom {
+            padding: 15px; text-align: center;
+            background: rgba(255,255,255,0.95);
+            border-top: 3px solid #000;
+            pointer-events: auto;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-family: 'Gloria Hallelujah', cursive;
+            color: #000;
+            margin: 0;
+            font-size: 1.8rem;
+            transform: rotate(-1deg);
+            background: #fff;
+            padding: 5px 10px;
+            border: 2px solid #000;
+            display: inline-block;
+        }
+
+        .stat-box {
+            background: #000;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 2px;
+            border: 2px solid #000;
+            box-shadow: 3px 3px 0px #888;
+            text-align: right;
+            font-size: 1rem;
+            transform: rotate(1deg);
+        }
+        
+        #btn-help {
+            background: #fff; border: 2px solid #000; font-family: 'Gloria Hallelujah';
+            font-size: 1.5rem; cursor: pointer; width: 50px; height: 50px;
+            border-radius: 50%;
+            box-shadow: 3px 3px 0 #000; transition: transform 0.1s;
+            margin-right: 15px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #btn-help:active { transform: scale(0.95); }
+
+        /* RULES MODAL - DETAILED */
+        #rules-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.98);
+            z-index: 200;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            padding-top: 20px;
+            overflow-y: auto;
+            pointer-events: auto;
+        }
+        
+        .rules-content {
+            max-width: 650px; width: 90%;
+            background: #fff; 
+            border: 4px solid #000; 
+            padding: 30px;
+            box-shadow: 15px 15px 0 #000;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .rules-content h2 { 
+            font-family: 'Gloria Hallelujah'; font-size: 2.5rem; 
+            border-bottom: 3px dashed #000; margin-top: 0; 
+            text-align: center; padding-bottom: 10px;
+        }
+        
+        .rules-section {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
+        }
+
+        .rules-section h3 { 
+            font-family: 'Gloria Hallelujah'; font-size: 1.6rem; 
+            margin-bottom: 10px; color: #000; 
+            background: #ffff00; display: inline-block; padding: 2px 5px;
+            transform: rotate(-1deg);
+            border: 1px solid #000;
+        }
+        
+        .rules-section p { font-size: 1.2rem; line-height: 1.5; margin-bottom: 10px; }
+        .rules-section ul { font-size: 1.2rem; line-height: 1.5; padding-left: 20px; }
+        .rules-section li { margin-bottom: 8px; }
+        
+        .card-type-box {
+            border: 2px solid #000; padding: 10px; margin: 10px 0;
+            display: flex; align-items: center;
+        }
+        .ct-icon { font-size: 1.5rem; margin-right: 15px; width: 40px; text-align: center;}
+
+        .close-rules {
+            position: sticky; top: 10px; align-self: flex-end;
+            background: #000; color: #fff; border: none;
+            font-family: 'Gloria Hallelujah'; font-size: 1.2rem; padding: 10px 20px;
+            cursor: pointer; margin-bottom: -40px; margin-right: 10px; z-index: 210;
+        }
+
+        /* LOGS */
+        #log-container {
+            position: absolute; top: 90px; right: 10px;
+            width: 220px; height: 180px;
+            overflow-y: auto;
+            background: #fff;
+            border: 3px solid #000;
+            padding: 10px;
+            font-size: 0.95rem;
+            pointer-events: auto;
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.2);
+            opacity: 0.95;
+        }
+
+        .log-entry { margin-bottom: 5px; border-bottom: 1px dashed #000; padding-bottom: 2px; color: #000; }
+
+        /* SCREENS */
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #fff;
+            z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            pointer-events: auto;
+        }
+
+        .menu-card {
+            background: #fff;
+            padding: 30px;
+            border: 5px solid #000;
+            box-shadow: 10px 10px 0px #000;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+        }
+        
+        .hidden { display: none !important; }
+
+        input {
+            padding: 10px; font-size: 1.2rem; margin: 10px; width: 80%;
+            border: 3px solid #000; background: #eee; color: #000;
+            font-family: 'Gloria Hallelujah'; text-align: center;
+            outline: none; box-shadow: 4px 4px 0 #000;
+        }
+
+        button {
+            background: #000; color: white; border: none;
+            padding: 15px 30px; font-size: 1.2rem;
+            font-family: 'Gloria Hallelujah', cursive;
+            cursor: pointer; margin: 10px;
+            border: 2px solid #000;
+            transition: transform 0.1s;
+        }
+        button:hover { transform: scale(1.05) rotate(-1deg); background: #333; }
+        button:disabled { background: #999; border-color: #999; cursor: not-allowed; }
+
+        .player-list { margin: 15px auto; border: 3px solid #000; padding: 10px; width: 90%; background: #fff;}
+        .player-item { padding: 5px; border-bottom: 1px dashed #000; font-size: 1.1rem; }
+
+        #turn-indicator {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-family: 'Gloria Hallelujah', cursive;
+            color: #000;
+            text-shadow: 3px 3px 0px #fff;
+            -webkit-text-stroke: 2px white;
+            opacity: 0; pointer-events: none; z-index: 50;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        #tooltip {
+            position: absolute; background: #000; border: 2px solid #fff; color: #fff;
+            padding: 10px; pointer-events: none; display: none; width: 220px; z-index: 30;
+            transform: translate(-50%, -140%);
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.3); font-family: 'Patrick Hand';
+            text-align: center;
+        }
+        
+        .loader {
+            border: 6px solid #f3f3f3; border-top: 6px solid #000; border-radius: 50%;
+            width: 30px; height: 30px; animation: spin 2s linear infinite; margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.2rem; }
+            .menu-card { padding: 20px; }
+            button { padding: 10px 20px; font-size: 1rem; }
+            .stat-box { display: none; } /* Hide stats on tiny screens */
+            #log-container { top: auto; bottom: 80px; height: 100px; width: 180px; left: 10px; right: auto;}
+            .rules-content { padding: 15px; }
+            .rules-content h2 { font-size: 2rem; }
+        }
+
+    </style>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 </head>
 <body>
 
-  <div id="scene">
-    <img data-depth="0.2" src="https://static.wixstatic.com/media/37fbc7_6ff02b23299f472e91eb507a9555657a~mv2.png">
-    <img data-depth="0.4" src="https://static.wixstatic.com/media/37fbc7_68abdf4bd33743609e135570141ca7f8~mv2.png">
-    <img data-depth="0.6" src="https://static.wixstatic.com/media/37fbc7_6d8554b2ffc941fa88863efcf15bc325~mv2.png
-">
-  </div>
+    <!-- Background Art Layer -->
+    <canvas id="sketch-background"></canvas>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/parallax/3.1.0/parallax.min.js"></script>
-  <script>
-    const scene = document.getElementById('scene');
-    const parallaxInstance = new Parallax(scene, {
-      relativeInput: true,
-      hoverOnly: false,
-      inputType: 'touch', // Enable gyro
-      scalarX: 10,
-      scalarY: 10
-    });
-  </script>
+    <!-- UI Layer -->
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div style="display:flex; align-items:center;">
+                <button id="btn-help" onclick="toggleRules(true)">?</button>
+                <div>
+                    <h1>Goa Panic</h1>
+                    <div id="room-code-display" style="display:none; font-size:1rem; font-weight:bold; margin-left:5px;">ROOM: ????</div>
+                </div>
+            </div>
+            <div class="stat-box" id="game-stats" style="display:none">
+                <div>YOU: <span id="role-display" style="color:#ffff00; font-weight:bold;">???</span></div>
+            </div>
+        </div>
+
+        <div id="log-container" style="display:none"></div>
+
+        <div class="hud-bottom">
+            <div id="instruction-text" style="font-weight: 700; opacity:0; font-size: 1.2rem;">Loading...</div>
+        </div>
+    </div>
+
+    <!-- RULES MODAL -->
+    <div id="rules-modal" class="hidden">
+        <div style="width: 100%; max-width: 650px; display: flex; justify-content: flex-end; padding-right: 20px;">
+             <button class="close-rules" onclick="toggleRules(false)">X CLOSE</button>
+        </div>
+       
+        <div class="rules-content">
+            <h2>The Villa Survival Guide</h2>
+            
+            <div class="rules-section">
+                <h3>1. The Story</h3>
+                <p><strong>Shristhi</strong> rented a villa in Goa for a chill squad trip. But someone found a "Vintage Typography" book and read the Latin placeholder text out loud. Now a <strong>Vibe Demon</strong> is haunting the villa.</p>
+                <p>You have until <strong>11:00 AM (Checkout Time)</strong> to banish it or the deposit is gone forever.</p>
+            </div>
+
+            <div class="rules-section">
+                <h3>2. Your Secret Role</h3>
+                <p>At the start, you are assigned a role. <strong>Keep it secret!</strong></p>
+                <ul>
+                    <li><strong>THE SQUAD (Good):</strong> Most players are here. Your goal is to work together to fix the vibe.
+                        <br><em>Win Condition:</em> Play the 3 "Objective Cards" (Render, Client, Invoice) to the table.</li>
+                    <li><strong>THE TOURIST (Bad):</strong> One player is a chaos agent. They want the demon to stay.
+                        <br><em>Win Condition:</em> Sabotage the squad until the deck runs out, OR play the 3 "Cursed Cards" (Comic Sans, Unpaid, Corrupt).</li>
+                </ul>
+            </div>
+
+            <div class="rules-section">
+                <h3>3. Turn Overview</h3>
+                <p>On your turn, you MUST do the following:</p>
+                <ol>
+                    <li><strong>DRAW:</strong> Tap the deck (Left side) to take 1 card.</li>
+                    <li><strong>PLAY or DISCARD:</strong> Tap a card in your hand to play it to the center. If you don't want to use it, you effectively "discard" it to the pile, but its effect still happens!</li>
+                </ol>
+                <p><em>Tip: Watch what people play. If someone keeps discarding good cards, they might be the Tourist!</em></p>
+            </div>
+
+            <div class="rules-section">
+                <h3>4. Card Types</h3>
+                <div class="card-type-box">
+                    <span class="ct-icon">🎨</span>
+                    <div><strong>Action (Blue):</strong> Standard events. Skip turns, trade hands, or force reveals. Use these to find out who is who.</div>
+                </div>
+                <div class="card-type-box">
+                    <span class="ct-icon">🪳</span>
+                    <div><strong>Chaos (Pink):</strong> Real-life challenges! "Stand up", "High Five", or "Don't Blink". If you fail, you must discard a card.</div>
+                </div>
+                <div class="card-type-box">
+                    <span class="ct-icon">💾</span>
+                    <div><strong>Objective (Yellow):</strong> The Good Cards. <strong>Final_Render.ai, Client Approval, Invoice Paid</strong>. Collect all 3 in the discard pile to WIN.</div>
+                </div>
+                <div class="card-type-box">
+                    <span class="ct-icon">💀</span>
+                    <div><strong>Cursed (Red):</strong> The Bad Cards. <strong>Comic Sans, Unpaid Work, Corrupted File</strong>. If these 3 hit the pile, the Tourist WINS.</div>
+                </div>
+            </div>
+
+            <p style="text-align:center; font-weight:bold; margin-top:30px; font-size:1.4rem;">Tap 'X CLOSE' to start playing!</p>
+        </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div id="tooltip">
+        <h3 id="tt-title" style="margin:0; font-family:'Gloria Hallelujah'; color:#ffff00">Title</h3>
+        <p id="tt-type" style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-top:2px; border-bottom: 1px solid #555;">Type</p>
+        <p id="tt-desc" style="margin-bottom:0; font-size: 1.1rem; margin-top: 5px;">Desc</p>
+    </div>
+
+    <!-- Turn Splash -->
+    <div id="turn-indicator">YOUR TURN</div>
+
+    <!-- MAIN MENU SCREEN -->
+    <div id="start-screen" class="screen">
+        <div class="menu-card">
+            <h1 style="font-size: 3.5rem; line-height: 0.9;">Shristhi's<br><span style="font-size: 2.5rem; background: #000; color: #fff; padding: 0 10px;">Goa Panic</span></h1>
+            <div style="font-family: 'Patrick Hand'; color: #000; margin: 20px 0; font-size: 1.2rem;">"Sketchy Edition"</div>
+            <div id="auth-status">Connecting... <div class="loader" style="width:20px; height:20px; border-width:3px; display:inline-block; vertical-align:middle;"></div></div>
+            
+            <input type="text" id="p-name" placeholder="YOUR NAME" maxlength="10">
+            
+            <div style="display:flex; justify-content:center; flex-wrap:wrap; margin-top: 20px;">
+                <button id="btn-host" onclick="createGame()" disabled>HOST</button>
+                <div style="display:flex; flex-direction:column; align-items: center;">
+                    <input type="text" id="room-code" placeholder="CODE" style="width: 80px; margin-bottom: 5px; padding: 10px;">
+                    <button id="btn-join" onclick="joinGame()" style="margin:0; padding: 12px 20px;" disabled>JOIN</button>
+                </div>
+            </div>
+            <br>
+            <button onclick="toggleRules(true)" style="font-size:1rem; padding: 10px 20px; background: #fff; color:#000;">📖 Read Rules</button>
+        </div>
+    </div>
+
+    <!-- LOBBY SCREEN -->
+    <div id="lobby-screen" class="screen hidden">
+        <div class="menu-card">
+            <h1>Room: <span id="lobby-code" style="text-decoration: underline;"></span></h1>
+            <div class="player-list" id="lobby-list"></div>
+            <p style="color: #666;">Waiting for the squad...</p>
+            <button id="btn-start" onclick="startGameAction()" class="hidden">START!</button>
+            <br>
+            <button onclick="toggleRules(true)" style="font-size:1rem; padding: 5px 10px; background: #fff; color:#000; margin-top:10px;">How To Play</button>
+            <div id="wait-msg" style="margin-top:20px; font-weight:bold;">Waiting for Host...</div>
+        </div>
+    </div>
+
+    <!-- 3D Container -->
+    <div id="game-container"></div>
+
+    <!-- MAIN LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, onSnapshot, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- FIREBASE CONFIG (USER PROVIDED) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDoDLqcnKoG7dJHIoAJ3Xgl4AnaLhy5Cnw",
+            authDomain: "shrish-d0483.firebaseapp.com",
+            projectId: "shrish-d0483",
+            storageBucket: "shrish-d0483.firebasestorage.app",
+            messagingSenderId: "11385598076",
+            appId: "1:11385598076:web:b4805458dae031173619f9",
+            measurementId: "G-SMQLWW0KL5"
+        };
+
+        // Globals
+        window.db = null;
+        window.auth = null;
+        window.user = null;
+        window.gameId = null;
+        window.appId = "shristhi-goa-panic"; 
+
+        // Init
+        try {
+            const app = initializeApp(firebaseConfig);
+            window.auth = getAuth(app);
+            window.db = getFirestore(app);
+            
+            signInAnonymously(window.auth).then(() => {
+                console.log("Anon Auth Success");
+            }).catch(e => console.error(e));
+
+            onAuthStateChanged(window.auth, (u) => {
+                if(u) {
+                    window.user = u;
+                    const statusEl = document.getElementById('auth-status');
+                    statusEl.innerText = "Online";
+                    statusEl.style.color = "green";
+                    enableButtons();
+                }
+            });
+        } catch(e) {
+            console.error("Firebase Init Error", e);
+        }
+
+        // --- GAME ACTIONS ---
+
+        window.createGame = async function() {
+            if(!window.user) return;
+            const nameInput = document.getElementById('p-name').value || "SHRISTHI";
+            const name = nameInput.toUpperCase().substring(0, 10);
+            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+            window.gameId = code;
+
+            const initialData = {
+                hostId: window.user.uid,
+                status: 'lobby',
+                paranoia: 0,
+                turnIndex: 0,
+                players: [{ uid: window.user.uid, name: name, role: 'Host', hand: [], seat: 0 }],
+                deck: [], discard: [], logs: ["Lobby Created."]
+            };
+
+            await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', code), initialData);
+            enterLobby(code);
+        }
+
+        window.joinGame = async function() {
+            if(!window.user) return;
+            const nameInput = document.getElementById('p-name').value || "FRIEND";
+            const name = nameInput.toUpperCase().substring(0, 10);
+            const code = document.getElementById('room-code').value.toUpperCase();
+            if(!code) return alert("Need a Code!");
+            window.gameId = code;
+
+            const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', code);
+            const snap = await getDoc(gameRef);
+
+            if(snap.exists()) {
+                const data = snap.data();
+                if(data.status !== 'lobby') return alert("Game already started!");
+                
+                const newPlayer = { uid: window.user.uid, name: name, role: 'Guest', hand: [], seat: data.players.length };
+                
+                // Avoid dupes
+                const exists = data.players.find(p => p.uid === window.user.uid);
+                if(!exists) {
+                    await updateDoc(gameRef, { players: arrayUnion(newPlayer) });
+                }
+                enterLobby(code);
+            } else {
+                alert("Room not found!");
+            }
+        }
+
+        window.startGameAction = async function() {
+            const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', window.gameId);
+            const roles = ['The Designer', 'The Squad', 'The Squad', 'The Tourist', 'The Squad', 'The Squad'];
+            const shuffledRoles = roles.sort(() => Math.random() - 0.5);
+
+            // Create Deck with UIDs - UPDATED WITH FULL CARD LIST
+            const deck = [];
+            // Add more common cards
+            for(let i=0; i<30; i++) {
+                const template = window.CARDS_DB[Math.floor(Math.random() * 7)]; // First 7 are action/chaos
+                deck.push({ ...template, uid: 'c_' + Math.random().toString(36).substr(2,9) });
+            }
+            // Add 1 of each special win/curse card to ensure they exist
+            const specials = [7, 8, 9, 10, 11, 12];
+            specials.forEach(idx => {
+                if(window.CARDS_DB[idx]) {
+                     deck.push({ ...window.CARDS_DB[idx], uid: 'c_' + Math.random().toString(36).substr(2,9) });
+                     deck.push({ ...window.CARDS_DB[idx], uid: 'c_' + Math.random().toString(36).substr(2,9) }); // Add 2 of each to make winning possible
+                }
+            });
+            
+            // Shuffle Deck
+            deck.sort(() => Math.random() - 0.5);
+
+            const snap = await getDoc(gameRef);
+            const currentPlayers = snap.data().players;
+            
+            // Deal
+            const updatedPlayers = currentPlayers.map((p, i) => {
+                const hand = [];
+                for(let c=0; c<4; c++) hand.push(deck.pop());
+                return { ...p, role: shuffledRoles[i % shuffledRoles.length], hand: hand };
+            });
+
+            await updateDoc(gameRef, {
+                status: 'playing', players: updatedPlayers, deck: deck,
+                logs: arrayUnion("GAME STARTED.")
+            });
+        }
+
+        window.fbDrawCard = async function() {
+            if(!window.gameId || !window.user) return;
+            const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', window.gameId);
+            const snap = await getDoc(gameRef);
+            const data = snap.data();
+            
+            // Turn Check
+            const meIndex = data.players.findIndex(p => p.uid === window.user.uid);
+            if(data.turnIndex !== meIndex) return; 
+
+            if(data.deck.length === 0) return;
+
+            const newDeck = [...data.deck];
+            const card = newDeck.pop();
+            const newPlayers = [...data.players];
+            newPlayers[meIndex].hand.push(card);
+
+            await updateDoc(gameRef, { deck: newDeck, players: newPlayers });
+        }
+
+        window.fbPlayCard = async function(cardUid) {
+            if(!window.gameId || !window.user) return;
+            const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', window.gameId);
+            const snap = await getDoc(gameRef);
+            const data = snap.data();
+            
+            const meIndex = data.players.findIndex(p => p.uid === window.user.uid);
+            if(data.turnIndex !== meIndex) return;
+
+            const myPlayer = data.players[meIndex];
+            const cardIndex = myPlayer.hand.findIndex(c => c.uid === cardUid);
+            if(cardIndex === -1) return;
+
+            const card = myPlayer.hand[cardIndex];
+            const newPlayers = [...data.players];
+            newPlayers[meIndex].hand.splice(cardIndex, 1);
+            
+            const newDiscard = [...data.discard, card];
+            
+            let nextTurn = data.turnIndex + 1;
+            if(nextTurn >= data.players.length) nextTurn = 0;
+
+            await updateDoc(gameRef, {
+                players: newPlayers, discard: newDiscard, turnIndex: nextTurn,
+                logs: arrayUnion(`${myPlayer.name} played ${card.title}`)
+            });
+        }
+
+        // --- LOBBY LOGIC ---
+        window.enableButtons = function() {
+            document.getElementById('btn-host').disabled = false;
+            document.getElementById('btn-join').disabled = false;
+        }
+
+        window.enterLobby = function(code) {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('lobby-screen').classList.remove('hidden');
+            document.getElementById('lobby-code').innerText = code;
+            document.getElementById('room-code-display').innerText = "ROOM: " + code;
+            document.getElementById('room-code-display').style.display = "block";
+            
+            const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', code);
+            onSnapshot(gameRef, (docSnap) => {
+                if(!docSnap.exists()) return;
+                const data = docSnap.data();
+                
+                const list = document.getElementById('lobby-list');
+                list.innerHTML = "";
+                data.players.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'player-item';
+                    div.innerHTML = `<strong>${p.name}</strong>` + (p.uid === data.hostId ? " (HOST)" : "");
+                    list.appendChild(div);
+                });
+
+                if(window.user.uid === data.hostId) {
+                    document.getElementById('btn-start').classList.remove('hidden');
+                    document.getElementById('wait-msg').classList.add('hidden');
+                }
+
+                if(data.status === 'playing') {
+                    document.getElementById('lobby-screen').classList.add('hidden');
+                    // Start Three.js
+                    if(!window.gameInitDone) {
+                        window.gameInitDone = true;
+                        initGame3D(data);
+                    }
+                }
+            });
+        }
+    </script>
+
+    <!-- GAME LOGIC AND ART ENGINE -->
+    <script>
+        // --- GOA SKETCH ENGINE (PROCEDURAL ART) ---
+        // Draws simple vector-like doodles on a canvas for background art
+        
+        function initBackgroundArt() {
+            const canvas = document.getElementById('sketch-background');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width = window.innerWidth;
+            const h = canvas.height = window.innerHeight;
+
+            ctx.clearRect(0, 0, w, h);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#333';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Draw Random Elements
+            for(let i=0; i<5; i++) drawPalmTree(ctx, Math.random() * w, h - Math.random() * 200, 100 + Math.random()*50);
+            for(let i=0; i<3; i++) drawCloud(ctx, Math.random() * w, Math.random() * (h/2));
+            drawSun(ctx, w - 100, 100);
+            for(let i=0; i<10; i++) drawWave(ctx, Math.random() * w, h - Math.random() * 100);
+        }
+
+        // Sketch Primitives
+        function jitter(val, amt=2) { return val + (Math.random()-0.5)*amt; }
+        
+        function sketchLine(ctx, x1, y1, x2, y2) {
+            ctx.beginPath();
+            ctx.moveTo(jitter(x1), jitter(y1));
+            const midX = (x1+x2)/2, midY = (y1+y2)/2;
+            ctx.quadraticCurveTo(jitter(midX), jitter(midY), jitter(x2), jitter(y2));
+            ctx.stroke();
+        }
+
+        function drawPalmTree(ctx, x, y, scale) {
+            // Trunk
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.quadraticCurveTo(x + 20, y - scale/2, x, y - scale);
+            ctx.stroke();
+            // Leaves
+            const topX = x, topY = y - scale;
+            for(let i=0; i<5; i++) {
+                const angle = (Math.PI + (i/4)*Math.PI) + (Math.random()*0.5);
+                const len = scale * 0.8;
+                const endX = topX + Math.cos(angle)*len;
+                const endY = topY + Math.sin(angle)*len;
+                sketchLine(ctx, topX, topY, endX, endY);
+            }
+        }
+
+        function drawCloud(ctx, x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 30, Math.PI, 0);
+            ctx.arc(x+40, y, 40, Math.PI, 0);
+            ctx.arc(x+80, y, 30, Math.PI, 0);
+            ctx.stroke();
+        }
+
+        function drawSun(ctx, x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 40, 0, Math.PI*2);
+            ctx.stroke();
+            for(let i=0; i<8; i++) {
+                const angle = (i/8) * Math.PI * 2;
+                const sx = x + Math.cos(angle)*50;
+                const sy = y + Math.sin(angle)*50;
+                const ex = x + Math.cos(angle)*80;
+                const ey = y + Math.sin(angle)*80;
+                sketchLine(ctx, sx, sy, ex, ey);
+            }
+        }
+
+        function drawWave(ctx, x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 10, Math.PI, 0);
+            ctx.arc(x+20, y, 10, Math.PI, 0);
+            ctx.stroke();
+        }
+        
+        window.addEventListener('resize', initBackgroundArt);
+        initBackgroundArt(); // Run once on load
+
+
+        // --- GAME ASSETS & CONSTANTS ---
+        // UPDATED: Now includes ALL required win condition cards
+        window.CARDS_DB = [
+            { id: 'logo', title: 'Make Logo Bigger', type: 'Design', icon: 'eye', desc: 'Reveal a hand.' },
+            { id: 'traffic', title: 'Goa Traffic', type: 'Action', icon: 'spiral', desc: 'Skip next player.' },
+            { id: 'feni', title: 'Spilled Feni', type: 'Action', icon: 'spill', desc: 'Left player discards 2.' },
+            { id: 'pool', title: 'Pool Party', type: 'Action', icon: 'wave', desc: 'Pass hands left.' },
+            { id: 'roach', title: 'Bathroom Roach', type: 'Chaos', icon: 'bug', desc: 'Stand up last!' },
+            { id: 'scooty', title: 'Scooty Crash', type: 'Chaos', icon: 'scooter', desc: 'High five or discard.' },
+            { id: 'golden', title: 'Golden Hour', type: 'Chaos', icon: 'star', desc: 'Strike a pose.' },
+            
+            // BAD CARDS (Tourist Wins)
+            { id: 'comic', title: 'Comic Sans', type: 'Cursed', icon: 'skull', desc: 'Cursed Item 1/3' },
+            { id: 'unpaid', title: 'Unpaid Work', type: 'Cursed', icon: 'sadface', desc: 'Cursed Item 2/3' },
+            { id: 'corrupt', title: 'Corrupted File', type: 'Cursed', icon: 'glitch', desc: 'Cursed Item 3/3' },
+
+            // GOOD CARDS (Squad Wins)
+            { id: 'render', title: 'Final_Render.ai', type: 'Win', icon: 'floppy', desc: 'Objective 1/3' },
+            { id: 'client', title: 'Client Approval', type: 'Win', icon: 'check', desc: 'Objective 2/3' },
+            { id: 'invoice', title: 'Invoice Paid', type: 'Win', icon: 'money', desc: 'Objective 3/3' },
+            
+            // EXTRA
+            { id: 'wifi', title: 'Spotty WiFi', type: 'Action', icon: 'wifi', desc: 'Reveal hand till turn.' }
+        ];
+
+        // --- DRAWING HELPERS FOR CARDS ---
+        function drawSketchRect(ctx, x, y, w, h) {
+            sketchLine(ctx, x, y, x+w, y);
+            sketchLine(ctx, x+w, y, x+w, y+h);
+            sketchLine(ctx, x+w, y+h, x, y+h);
+            sketchLine(ctx, x, y+h, x, y);
+        }
+
+        function drawIcon(ctx, type, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000';
+
+            if(type === 'eye') {
+                ctx.beginPath(); ctx.ellipse(0, 0, size/2, size/3, 0, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 0, size/6, 0, Math.PI*2); ctx.fill();
+            } else if (type === 'skull') {
+                ctx.beginPath(); ctx.arc(0, -5, size/3, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-10, 20); ctx.lineTo(10, 20); ctx.stroke();
+                ctx.fillStyle='#000';
+                ctx.beginPath(); ctx.arc(-10, -5, 5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(10, -5, 5, 0, Math.PI*2); ctx.fill();
+            } else if (type === 'star') {
+                ctx.beginPath();
+                for(let i=0; i<5; i++) {
+                    ctx.lineTo(Math.cos((18+i*72)/180*Math.PI)*size/2, -Math.sin((18+i*72)/180*Math.PI)*size/2);
+                    ctx.lineTo(Math.cos((54+i*72)/180*Math.PI)*size/4, -Math.sin((54+i*72)/180*Math.PI)*size/4);
+                }
+                ctx.closePath(); ctx.stroke();
+            } else if (type === 'spiral') {
+                ctx.beginPath();
+                for(let i=0; i<50; i++) {
+                    const angle = 0.5 * i; const r = 1 + 1 * i;
+                    ctx.lineTo(Math.cos(angle)*r, Math.sin(angle)*r);
+                }
+                ctx.stroke();
+            } else if (type === 'check') {
+                ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-5, 20); ctx.lineTo(30, -20); ctx.stroke();
+            } else if (type === 'floppy') {
+                ctx.strokeRect(-20, -20, 40, 40); ctx.fillRect(-10, -20, 20, 15);
+            } else {
+                ctx.beginPath(); ctx.arc(0,0,size/3, 0, Math.PI*2); ctx.stroke();
+                ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText("?", 0, 0);
+            }
+            ctx.restore();
+        }
+
+        function createCardTexture(data) {
+            const c = document.createElement('canvas'); c.width = 256; c.height = 356;
+            const ctx = c.getContext('2d');
+            
+            ctx.fillStyle = '#111'; ctx.fillRect(0,0,256,356); // Black BG
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(jitter(10), jitter(10)); ctx.lineTo(jitter(246), jitter(10));
+            ctx.lineTo(jitter(246), jitter(346)); ctx.lineTo(jitter(10), jitter(346));
+            ctx.closePath(); ctx.fill();
+
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+            drawSketchRect(ctx, 20, 20, 216, 200);
+
+            drawIcon(ctx, data.icon, 128, 120, 100);
+
+            ctx.fillStyle = '#000'; ctx.textAlign = 'center';
+            ctx.font = 'bold 22px Arial'; ctx.fillText(data.title.toUpperCase(), 128, 260);
+            ctx.font = 'italic 16px Arial'; ctx.fillText(data.type, 128, 290);
+
+            ctx.font = 'bold 20px Arial'; ctx.fillText("★", 30, 45); ctx.fillText("★", 226, 330);
+
+            return new THREE.CanvasTexture(c);
+        }
+
+        function createBackTexture() {
+            const c = document.createElement('canvas'); c.width = 256; c.height = 356;
+            const ctx = c.getContext('2d');
+            
+            ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,356);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+            
+            for(let i=0; i<20; i++) {
+                const x = Math.random() * 256, y = Math.random() * 356, size = 10 + Math.random() * 20;
+                if(Math.random() > 0.5) {
+                    ctx.beginPath(); ctx.moveTo(x-size, y); ctx.lineTo(x+size, y);
+                    ctx.moveTo(x, y-size); ctx.lineTo(x, y+size); ctx.stroke();
+                } else {
+                    ctx.beginPath(); ctx.arc(x, y, size/2, 0, Math.PI*2); ctx.stroke();
+                }
+            }
+            
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+            drawSketchRect(ctx, 10, 10, 236, 336);
+            return new THREE.CanvasTexture(c);
+        }
+
+        // --- RULES UI ---
+        window.toggleRules = function(show) {
+            const el = document.getElementById('rules-modal');
+            if(show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+
+        // --- THREE.JS SCENE ---
+        let scene, camera, renderer, raycaster, mouse;
+        let cardsMap = new Map();
+        let table, deckMesh;
+        let localPlayerIndex = -1;
+        
+        const backTex = createBackTexture(); 
+
+        function initGame3D(initialData) {
+            document.getElementById('game-stats').style.display = 'block';
+            document.getElementById('log-container').style.display = 'block';
+
+            scene = new THREE.Scene();
+            // Transparent background to show the canvas art
+            scene.background = null; 
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 18, 12);
+            camera.lookAt(0, 0, 2);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.getElementById('game-container').innerHTML = ''; 
+            document.getElementById('game-container').appendChild(renderer.domElement);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambient);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(5, 10, 5);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // Table (Black surface)
+            const tGeo = new THREE.BoxGeometry(40, 0.1, 40);
+            const tMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+            const table = new THREE.Mesh(tGeo, tMat);
+            table.position.y = -0.5;
+            scene.add(table);
+
+            // Deck
+            const dGeo = new THREE.BoxGeometry(2.5, 0.5, 3.5);
+            const dMat = new THREE.MeshBasicMaterial({ map: backTex });
+            deckMesh = new THREE.Mesh(dGeo, dMat);
+            deckMesh.position.set(-5, 0.25, 0);
+            deckMesh.userData = { isDeck: true };
+            scene.add(deckMesh);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            
+            // Mouse & Touch Events
+            const container = document.getElementById('game-container');
+            container.addEventListener('mousemove', onMouseMove);
+            container.addEventListener('click', onClick);
+            container.addEventListener('touchstart', onTouchStart, {passive: false});
+            window.addEventListener('resize', onResize);
+
+            animate();
+
+            // Sync
+            import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js").then(({ doc, onSnapshot }) => {
+                const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', window.gameId);
+                onSnapshot(gameRef, (snap) => {
+                    if(snap.exists()) syncGameState(snap.data());
+                });
+            });
+        }
+
+        function createCardMesh(data) {
+            const geo = new THREE.BoxGeometry(2.5, 0.02, 3.5);
+            const faceTex = createCardTexture(data);
+            const matFace = new THREE.MeshBasicMaterial({ map: faceTex });
+            const matBack = new THREE.MeshBasicMaterial({ map: backTex });
+            const matSide = new THREE.MeshBasicMaterial({ color: 0x000000 }); 
+            
+            const materials = [matSide, matSide, matSide, matSide, matFace, matBack];
+            const mesh = new THREE.Mesh(geo, materials);
+            mesh.userData = { id: data.uid, data: data, isCard: true };
+            return mesh;
+        }
+
+        function syncGameState(data) {
+            localPlayerIndex = data.players.findIndex(p => p.uid === window.user.uid);
+            if(localPlayerIndex === -1) localPlayerIndex = 0; 
+
+            document.getElementById('role-display').innerText = data.players[localPlayerIndex].role;
+            
+            const isMyTurn = data.turnIndex === localPlayerIndex;
+            const hud = document.getElementById('instruction-text');
+            hud.style.opacity = 1;
+            hud.innerText = isMyTurn ? "IT'S YOUR TURN" : `WAITING FOR ${data.players[data.turnIndex].name}`;
+
+            if(data.logs) {
+                const box = document.getElementById('log-container');
+                box.innerHTML = '';
+                data.logs.slice(-8).reverse().forEach(t => {
+                    const d = document.createElement('div');
+                    d.className = 'log-entry';
+                    d.innerText = t;
+                    box.appendChild(d);
+                });
+            }
+
+            const validUids = new Set();
+            
+            data.players.forEach((p, pIndex) => {
+                const relPos = (pIndex - localPlayerIndex + data.players.length) % data.players.length;
+                p.hand.forEach((card, cIndex) => {
+                    validUids.add(card.uid);
+                    updateCard(card, 'hand', relPos, cIndex, p.hand.length);
+                });
+            });
+
+            data.discard.forEach((card, i) => {
+                validUids.add(card.uid);
+                updateCard(card, 'discard', 0, i, 0);
+            });
+
+            for(let [uid, mesh] of cardsMap) {
+                if(!validUids.has(uid)) {
+                    scene.remove(mesh);
+                    cardsMap.delete(uid);
+                }
+            }
+        }
+
+        function updateCard(data, loc, seat, index, total) {
+            let mesh = cardsMap.get(data.uid);
+            if(!mesh) {
+                mesh = createCardMesh(data);
+                scene.add(mesh);
+                cardsMap.set(data.uid, mesh);
+                mesh.position.set(-5, 0.5, 0); 
+            }
+
+            let targetPos = new THREE.Vector3();
+            let targetRot = new THREE.Euler();
+
+            if(loc === 'discard') {
+                targetPos.set(5, 0.1 + index*0.01, 0);
+                const randomZ = (data.uid.charCodeAt(0) % 10 - 5) * 0.1; 
+                targetRot.set(-Math.PI/2, 0, randomZ);
+            } else {
+                const spread = 1.5;
+                const start = -((total-1)*spread)/2;
+                const offset = start + index*spread;
+
+                if(seat === 0) { // ME
+                    targetPos.set(offset, 0.5 + index*0.01, 6);
+                    targetRot.set(-Math.PI/2, 0, 0);
+                } else if (seat === 1) { // Left
+                    targetPos.set(-9, 0.5 + index*0.01, offset);
+                    targetRot.set(Math.PI/2, 0, -Math.PI/2);
+                } else if (seat === 2) { // Top
+                    targetPos.set(-offset, 0.5 + index*0.01, -6);
+                    targetRot.set(Math.PI/2, 0, Math.PI);
+                } else { // Right
+                    targetPos.set(9, 0.5 + index*0.01, -offset);
+                    targetRot.set(Math.PI/2, 0, Math.PI/2);
+                }
+            }
+
+            new TWEEN.Tween(mesh.position).to(targetPos, 500).easing(TWEEN.Easing.Quadratic.Out).start();
+            new TWEEN.Tween(mesh.rotation).to({x:targetRot.x, y:targetRot.y, z:targetRot.z}, 500).start();
+        }
+
+        // --- INPUT HANDLING ---
+        function updateMouse(clientX, clientY) {
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function onMouseMove(e) {
+            updateMouse(e.clientX, e.clientY);
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children);
+            
+            const tt = document.getElementById('tooltip');
+            if(intersects.length > 0 && intersects[0].object.userData.isCard) {
+                const data = intersects[0].object.userData.data;
+                if(intersects[0].object.rotation.x < 0) {
+                    tt.style.display = 'block';
+                    tt.style.left = e.clientX + 'px';
+                    tt.style.top = e.clientY + 'px';
+                    document.getElementById('tt-title').innerText = data.title;
+                    document.getElementById('tt-type').innerText = data.type;
+                    document.getElementById('tt-desc').innerText = data.desc || "Action";
+                }
+            } else {
+                tt.style.display = 'none';
+            }
+        }
+
+        function onClick(e) {
+            handleInput(e.clientX, e.clientY);
+        }
+
+        function onTouchStart(e) {
+            e.preventDefault(); // Stop default touch actions
+            if(e.touches.length > 0) {
+                const t = e.touches[0];
+                handleInput(t.clientX, t.clientY);
+            }
+        }
+
+        function handleInput(x, y) {
+            if(!window.gameId) return;
+            updateMouse(x, y);
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children);
+            if(intersects.length > 0) {
+                const obj = intersects[0].object;
+                if(obj.userData.isDeck) window.fbDrawCard();
+                else if (obj.userData.isCard) window.fbPlayCard(obj.userData.id);
+            }
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            initBackgroundArt();
+        }
+
+        function animate(t) {
+            requestAnimationFrame(animate);
+            TWEEN.update(t);
+            renderer.render(scene, camera);
+        }
+
+    </script>
 </body>
 </html>
